@@ -20,7 +20,3 @@ class Objevtive(nn.Module):
                     log_likelihood += z[t][l][self.N_l[l][ll]] * (1 - log_z[t][l][self.N_l[l][ll]] + log_theata[t][l][ll])
         G = log_likelihood - self.lam * (torch.sum(y - torch.sum(z, 2)) + torch.sum(y - torch.sum(z, 1)))[0]
         return G
-
-
-if __name__ == "__main__":
-    
