@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.distributed
 
 class NCGM(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -20,6 +21,9 @@ class NCGM(nn.Module):
 
 if __name__ == "__main__":
     model = NCGM(5, 8)
-    input_tensor = torch.randn(3, 6, 8, 5)
+    input_tensor = torch.randn(3, 2, 8, 5)
     output_tensor = model(input_tensor)
-    print(output_tensor)
+
+    m = torch.distributions.multinomial.Multinomial(100, output_tensor.squeeze())
+    x = m.sample()
+    print(x)
