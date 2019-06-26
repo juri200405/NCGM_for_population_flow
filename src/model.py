@@ -21,9 +21,20 @@ class NCGM(nn.Module):
 
 if __name__ == "__main__":
     model = NCGM(5, 8)
-    input_tensor = torch.randn(3, 2, 8, 5)
+    input_tensor = torch.randn(2, 5)
     output_tensor = model(input_tensor)
+    print(output_tensor)
+
+    tmp = torch.randn(3, 3, 3)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                tmp[i][j][k] = (j + 1) * (10 ** i)
+    print(torch.sum(tmp, 0))
+    print(torch.sum(tmp, 2))
+    print(torch.sum(tmp, 0) - torch.sum(tmp, 2))
 
     m = torch.distributions.multinomial.Multinomial(100, output_tensor.squeeze())
     x = m.sample()
     print(x)
+    
