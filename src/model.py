@@ -68,7 +68,7 @@ if __name__ == "__main__":
     population_tensor.to(device)
 
     model.train()
-    for i in range(1):
+    for i in range(100000):
         output_tensor = model(input_tensor, population_tensor, 10.0)
         if i % 100 == 0:
             print(output_tensor)
