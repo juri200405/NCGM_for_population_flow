@@ -18,16 +18,18 @@ class NCGM(nn.Module):
         self.fc2 = nn.Linear(self.hid_size, 1)
         self.softmax = nn.Softmax(2)
 
-        self.Z = torch.randint(1, 14, (self.T, self.L, self.L), requires_grad=True, dtype=torch.double)
-        self.one = torch.ones(self.T, self.L, self.L, dtype=torch.double)
+        self.Z = torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double)
+        self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double)
     
     def forward(self, input, y, lam):
         lz = torch.log2(self.Z)
-        lf = torch.log2(self.f(input).squeeze())
+        lf = torch.log2(self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze())
         tmp = self.one - lz + lf
 
         L = torch.sum(torch.mul(self.Z, tmp))
-        G = L - lam * (torch.sum((y - torch.sum(self.Z, 2)) ** 2) + torch.sum((y - torch.sum(self.Z, 1)) ** 2))
+        y_b = torch.narrow(y, 0, 0, self.T - 1)
+        y_a = torch.narrow(y, 0, 1, self.T - 1)
+        G = L - lam * (torch.sum((y_b - torch.sum(self.Z, 2)) ** 2) + torch.sum((y_a - torch.sum(self.Z, 1)) ** 2))
         return G * (-1)
     
     def f(self, inputs):
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     population_tensor.to(device)
 
     model.train()
-    for i in range(10000000):
+    for i in range(1):
         output_tensor = model(input_tensor, population_tensor, 10.0)
         if i % 100 == 0:
             print(output_tensor)
