@@ -31,8 +31,8 @@ class NCGM(nn.Module):
         y_b = torch.narrow(y, 0, 0, self.T - 1)
         y_a = torch.narrow(y, 0, 1, self.T - 1)
         e_b = torch.diagonal(self.Z * adj, 0, 1, 2)
-        e_b = torch.diagonal(torch.transpose(self.Z, 1, 2) * adj, 0, 1, 2)
-        G = L - lam * (torch.sum((y_b - torch.sum(self.Z, 2)) ** 2) + torch.sum((y_a - torch.sum(self.Z, 1)) ** 2))
+        e_a = torch.diagonal(torch.transpose(self.Z, 1, 2) * adj, 0, 1, 2)
+        G = L - lam * (torch.sum((y_b - e_b) ** 2) + torch.sum((y_a - e_a) ** 2))
         return G * (-1)
     
     def f(self, inputs):
@@ -75,10 +75,11 @@ if __name__ == "__main__":
     adj_tensor.to(device)
 
     model.train()
-    for i in range(100000):
+    for i in range(101):
         output_tensor = model(input_tensor, population_tensor, adj_tensor, 10.0)
         if i % 100 == 0:
             print(output_tensor)
+            print(model.Z)
 
         optimizer.zero_grad()
         output_tensor.backward()
