@@ -21,14 +21,17 @@ class NCGM(nn.Module):
         self.Z = torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double)
         self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double)
     
-    def forward(self, input, y, lam):
-        lz = torch.log2(self.Z)
+    def forward(self, input, y, adj, lam):
+        adj_Z = torch.mul(self.Z, adj)
+        lz = torch.log2(adj_Z)
         lf = torch.log2(self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze())
         tmp = self.one - lz + lf
 
-        L = torch.sum(torch.mul(self.Z, tmp))
+        L = torch.sum(torch.mul(adj_Z, tmp))
         y_b = torch.narrow(y, 0, 0, self.T - 1)
         y_a = torch.narrow(y, 0, 1, self.T - 1)
+        e_b = torch.diagonal(self.Z * adj, 0, 1, 2)
+        e_b = torch.diagonal(torch.transpose(self.Z, 1, 2) * adj, 0, 1, 2)
         G = L - lam * (torch.sum((y_b - torch.sum(self.Z, 2)) ** 2) + torch.sum((y_a - torch.sum(self.Z, 1)) ** 2))
         return G * (-1)
     
@@ -49,6 +52,7 @@ if __name__ == "__main__":
         neighbor = [[int(col) for col in row] for row in reader]
     
     location_table = [[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]
+    adj_table = [[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,1,1]]
 
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
@@ -67,9 +71,12 @@ if __name__ == "__main__":
     population_tensor = torch.Tensor(population_data)
     population_tensor.to(device)
 
+    adj_tensor = torch.Tensor(adj_table)
+    adj_tensor.to(device)
+
     model.train()
     for i in range(100000):
-        output_tensor = model(input_tensor, population_tensor, 10.0)
+        output_tensor = model(input_tensor, population_tensor, adj_tensor, 10.0)
         if i % 100 == 0:
             print(output_tensor)
 
