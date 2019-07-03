@@ -70,16 +70,12 @@ if __name__ == "__main__":
             
     #input_list = [[[[t / 7.0 - 0.5, location_table[l][0], location_table[l][1], location_table[ll][0] - location_table[l][0], location_table[ll][1] - location_table[l][1]] for ll in range(4)] for l in range(4)] for t in range(8)]
     input_tensor = torch.Tensor(input_list)
-    print(input_tensor.size())
     input_tensor.to(device)
 
-    print(population_data)
     population_tensor = torch.Tensor(population_data)
-    print(population_tensor.size())
     population_tensor.to(device)
 
     adj_tensor = torch.Tensor(adj_table)
-    print(adj_tensor.size())
     adj_tensor.to(device)
 
     mod.train()
