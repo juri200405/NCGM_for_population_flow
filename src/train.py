@@ -16,6 +16,7 @@ def read_data(dpath, filename):
             if time != int(row["time"]):
                 population_data.append(pop_tmp)
                 pop_tmp = []
+                time = int(row["time"])
             pop_tmp.append(int(row["population"]))
         if pop_tmp != []:
             population_data.append(pop_tmp)
