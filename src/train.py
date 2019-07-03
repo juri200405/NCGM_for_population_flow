@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from tqdm import tqdm
 
 import torch
 import torch.optim as optim
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     optimizer = optim.SGD(mod.parameters(), lr=0.01)
 
     input_list = []
-    for t in range(9480):
+    for t in trange(9480):
         input_list_tmp = []
         for l in range(117):
             input_tmp = []
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     adj_tensor.to(device)
 
     mod.train()
-    for i in range(1000):
+    for i in trange(1000):
         output_tensor = mod(input_tensor, population_tensor, adj_tensor, 1.0)
         if i % 100 == 0:
             print(output_tensor)
