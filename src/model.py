@@ -18,20 +18,21 @@ class NCGM(nn.Module):
         self.fc2 = nn.Linear(self.hid_size, 1)
         self.softmax = nn.Softmax(2)
 
-        self.Z = torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double)
+        #self.Z = nn.Parameter(torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double))
+        self.Z_dash = nn.Parameter(torch.log(torch.randint(1, 14, (self.T - 1, self.L, self.L), dtype=torch.double)))
         self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double)
     
     def forward(self, input, y, adj, lam):
-        adj_Z = torch.mul(self.Z, adj)
-        lz = torch.log2(adj_Z)
-        lf = torch.log2(self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze())
-        tmp = self.one - lz + lf
+        Z = torch.exp(self.Z_dash)
+        adj_Z = torch.mul(self.Z_dash, adj)
+        lf = torch.log(self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze())
+        tmp = self.one - adj_Z + lf
 
-        L = torch.sum(torch.mul(adj_Z, tmp))
+        L = torch.sum(torch.mul(torch.exp(adj_Z), tmp))
         y_b = torch.narrow(y, 0, 0, self.T - 1)
         y_a = torch.narrow(y, 0, 1, self.T - 1)
-        e_b = torch.diagonal(self.Z * adj, 0, 1, 2)
-        e_a = torch.diagonal(torch.transpose(self.Z, 1, 2) * adj, 0, 1, 2)
+        e_b = torch.diagonal(Z * adj, 0, 1, 2)
+        e_a = torch.diagonal(torch.transpose(Z, 1, 2) * adj, 0, 1, 2)
         G = L - lam * (torch.sum((y_b - e_b) ** 2) + torch.sum((y_a - e_a) ** 2))
         return G * (-1)
     
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     model = NCGM(5, 8, 8, 4)
     model.to(device)
 
-    optimizer = optim.SGD(model.parameters(), lr=0.05)
+    optimizer = optim.SGD(model.parameters(), lr=0.01)
 
     input_list = [[[[t / 7.0 - 0.5, location_table[l][0], location_table[l][1], location_table[ll][0] - location_table[l][0], location_table[ll][1] - location_table[l][1]] for ll in range(4)] for l in range(4)] for t in range(8)]
     input_tensor = torch.Tensor(input_list)
@@ -75,12 +76,12 @@ if __name__ == "__main__":
     adj_tensor.to(device)
 
     model.train()
-    for i in range(101):
-        output_tensor = model(input_tensor, population_tensor, adj_tensor, 10.0)
+    for i in range(1000):
+        output_tensor = model(input_tensor, population_tensor, adj_tensor, 1.0)
         if i % 100 == 0:
             print(output_tensor)
-            print(model.Z)
 
         optimizer.zero_grad()
         output_tensor.backward()
         optimizer.step()
+    print(torch.exp(model.Z_dash))
