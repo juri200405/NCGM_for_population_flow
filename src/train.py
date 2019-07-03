@@ -73,9 +73,11 @@ if __name__ == "__main__":
     input_tensor.to(device)
 
     population_tensor = torch.Tensor(population_data)
+    print(population_tensor.size())
     population_tensor.to(device)
 
     adj_tensor = torch.Tensor(adj_table)
+    print(adj_tensor.size())
     adj_tensor.to(device)
 
     mod.train()

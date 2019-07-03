@@ -20,8 +20,11 @@ class NCGM(nn.Module):
     
     def forward(self, input, y, adj, lam):
         Z = torch.exp(self.Z_dash)
+        print(Z.size())
         adj_Z = torch.mul(self.Z_dash, adj)
+        print(adj_Z.size())
         lf = torch.log(self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze())
+        print(lf.size())
         tmp = self.one - adj_Z + lf
 
         L = torch.sum(torch.mul(torch.exp(adj_Z), tmp))
