@@ -72,6 +72,7 @@ if __name__ == "__main__":
     print(input_tensor.size())
     input_tensor.to(device)
 
+    print(population_data)
     population_tensor = torch.Tensor(population_data)
     print(population_tensor.size())
     population_tensor.to(device)
