@@ -83,7 +83,7 @@ if __name__ == "__main__":
     itr = tqdm.trange(1000)
     for i in itr:
         output_tensor = mod(input_tensor, population_tensor, adj_tensor, 1.0)
-        itr.set_postfix(output_tensor)
+        itr.set_postfix(ordered_dict=OrderedDict(out=output_tensor))
 
         optimizer.zero_grad()
         output_tensor.backward()
