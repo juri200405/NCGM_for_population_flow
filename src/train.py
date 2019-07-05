@@ -81,7 +81,8 @@ if __name__ == "__main__":
     adj_tensor.to(device)
 
     mod.train()
-    itr = tqdm.trange(1000)
+    print(mod.state_dict())
+    itr = tqdm.trange(1)
     for i in itr:
         output_tensor = mod(input_tensor, population_tensor, adj_tensor, 1.0)
         itr.set_postfix(ordered_dict=OrderedDict(out=output_tensor))
