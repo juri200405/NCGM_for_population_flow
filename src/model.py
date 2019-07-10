@@ -15,10 +15,11 @@ class NCGM(nn.Module):
         self.softmax = nn.Softmax(2)
 
         #self.Z = nn.Parameter(torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double))
-        self.Z_dash = nn.Parameter(torch.log(torch.randint(1, 14, (self.T - 1, self.L, self.L), dtype=torch.double)))
-        self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double)
+        #self.Z_dash = nn.Parameter(torch.log(torch.randint(1, 14, (self.T - 1, self.L, self.L), dtype=torch.double)))
+        #self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double)
     
     def forward(self, input, y, adj, lam):
+        '''
         Z = torch.exp(self.Z_dash)
         adj_Z = torch.mul(self.Z_dash, adj)
         lf = torch.log(self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze())
@@ -31,6 +32,15 @@ class NCGM(nn.Module):
         e_a = torch.diagonal(torch.transpose(Z, 1, 2) * adj, 0, 1, 2)
         G = L - lam * (torch.sum((y_b - e_b) ** 2) + torch.sum((y_a - e_a) ** 2))
         return G * (-1)
+        '''
+        theta = self.f(torch.narrow(input, 0, 0, self.T - 1))
+        Z = torch.zeros(self.T - 1, self.L, 10, dtype = torch.double)
+        for i in range(self.T):
+            for j in range(self.L):
+                x = torch.distributions.multinomial.Multinomial(y[i, j].item(), probs=theta[i, j]).sample()
+                for k in range(10):
+                    Z[i, j, k] = x[k]
+        return Z, theta
     
     def f(self, inputs):
         out = torch.tanh(self.fc1(inputs))
