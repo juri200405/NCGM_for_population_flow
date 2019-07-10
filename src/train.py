@@ -76,36 +76,44 @@ if __name__ == "__main__":
             csv_file.write(','.join(adj_list[i]))
             csv_file.write('\n')
     '''
-    population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv")
-    location = [[row[0] / 11 - 0.5, row[1] / 14 - 0.5] for row in location_table]
+    #neighbor_size = 10
+    neighbor_size = 4
+    #time_size = 9480
+    time_size = 8
+    #location_size = 117
+    location_size = 4
+    #population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv")
+    population_data, adj_table, location, neighbor_table = read_samlpe()
+    #location = [[row[0] / 11 - 0.5, row[1] / 14 - 0.5] for row in location_table]
     
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
     torch.set_default_dtype(torch.double)
+    torch.set_grad_enabled(True)
 
 
-    mod = model.NCGM(5, 8, 9480, 117)
+    mod = model.NCGM(5, 8, time_size, location_size, neighbor_size)
     mod.to(device)
 
     optimizer = optim.SGD(mod.parameters(), lr=0.01)
 
     input_list = []
-    for t in tqdm.trange(9480):
+    for t in tqdm.trange(time_size):
         input_list_tmp = []
-        for l in range(117):
+        for l in range(location_size):
             input_tmp = []
-            for ll in neighbor_table[l]:
-                input_tmp.append([t / 9480.0 - 0.5, location[l][0], location[l][1], location[ll][0] - location[l][0], location[ll][1] - location[l][1]])
-            while len(input_tmp) < 10:
-                input_tmp.append([t / 9480.0 - 0.5, location[l][0], location[l][1], 0.0, 0.0])
+            #for ll in neighbor_table[l]:
+            for ll in range(location_size):
+                input_tmp.append([t / float(time_size) - 0.5, location[l][0], location[l][1], location[ll][0] - location[l][0], location[ll][1] - location[l][1]])
+            while len(input_tmp) < neighbor_size:
+                input_tmp.append([t / float(time_size) - 0.5, location[l][0], location[l][1], 0.0, 0.0])
             input_list_tmp.append(input_tmp)
         input_list.append(input_list_tmp)
-            
-    #input_list = [[[[t / 7.0 - 0.5, location_table[l][0], location_table[l][1], location_table[ll][0] - location_table[l][0], location_table[ll][1] - location_table[l][1]] for ll in range(4)] for l in range(4)] for t in range(8)]
+    
     input_tensor = torch.Tensor(input_list)
     input_tensor.to(device)
 
-    population_tensor = torch.tensor(population_data, dtype=torch.int32)
+    population_tensor = torch.tensor(population_data, dtype=torch.double)
     population_tensor.to(device)
 
     adj_tensor = torch.Tensor(adj_table)
@@ -113,16 +121,18 @@ if __name__ == "__main__":
 
     mod.train()
     print(mod.state_dict())
-    itr = tqdm.trange(1)
+    itr = tqdm.trange(100)
+    losses = []
     for i in itr:
-        Z, theta = mod(input_tensor, population_tensor, adj_tensor, 1.0)
-        #itr.set_postfix(ordered_dict=OrderedDict(out=output_tensor))
-        print(Z)
-        print(theta)
+        Z, theta = mod(input_tensor, population_tensor)
 
-        '''
+        loss = mod.objective_func(Z, theta, population_tensor, 1.0)
+        losses.append(loss.item())
+        
         optimizer.zero_grad()
-        output_tensor.backward()
+        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
+
+        loss.backward()
         optimizer.step()
-        '''
-    print(torch.exp(mod.Z_dash))
+    print(Z)
+    print(losses)
