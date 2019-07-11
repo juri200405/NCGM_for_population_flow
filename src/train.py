@@ -136,6 +136,5 @@ if __name__ == "__main__":
         loss.backward()
         optimizer.step()
 
-        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), grad=loss.grad))
-    print(Z)
+        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
     print(losses)
