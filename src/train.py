@@ -89,11 +89,14 @@ if __name__ == "__main__":
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
     torch.set_default_dtype(torch.double)
-    torch.set_grad_enabled(True)
+    #torch.set_grad_enabled(True)
+    torch.autograd.set_detect_anomaly(True)
 
 
     mod = model.NCGM(5, 8, time_size, location_size, neighbor_size)
     mod.to(device)
+
+    objective = model.NCGM_objective(time_size, location_size)
 
     optimizer = optim.SGD(mod.parameters(), lr=0.01)
 
@@ -126,13 +129,13 @@ if __name__ == "__main__":
     for i in itr:
         Z, theta = mod(input_tensor, population_tensor)
 
-        loss = mod.objective_func(Z, theta, population_tensor, 1.0)
+        loss = objective(Z, theta, population_tensor, 1.0)
         losses.append(loss.item())
         
         optimizer.zero_grad()
-        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
-
         loss.backward()
         optimizer.step()
+
+        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), grad=loss.grad))
     print(Z)
     print(losses)

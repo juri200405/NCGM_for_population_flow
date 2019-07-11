@@ -17,7 +17,7 @@ class NCGM(nn.Module):
 
         #self.Z = nn.Parameter(torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double))
         #self.Z_dash = nn.Parameter(torch.log(torch.randint(1, 14, (self.T - 1, self.L, self.L), dtype=torch.double)))
-        self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double, requires_grad=True)
+        #self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double, requires_grad=True)
     
     def forward(self, input, y):
         '''
@@ -37,11 +37,17 @@ class NCGM(nn.Module):
         theta = self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze()
         #Z = torch.zeros(self.T - 1, self.L, self.nei, dtype=torch.double)
         #Z = torch.zeros(self.T - 1, self.L, self.L, dtype=torch.double)
+        Z = theta.clone()
+        yt = torch.narrow(y, 0, 0, self.T - 1)
+        for i in range(self.L):
+            Z[:,:,i] = torch.mul(Z[:,:,i], yt)
+        '''
         y_list = []
         for _ in range(self.L):
             y_list.append(torch.unsqueeze(torch.narrow(y, 0, 0, self.T - 1), 2))
         ys = torch.cat(y_list, 2)
         Z = torch.mul(theta, ys)
+        '''
         '''
         for i in range(self.T - 1):
             for j in range(self.L):
@@ -58,9 +64,10 @@ class NCGM(nn.Module):
         out = self.fc2(out)
         out = self.softmax(out)
         return out
-    
+    '''
     def objective_func(self, Z, theta, y, lam):
-        '''
+    '''
+    '''
         L = 0.0
         for t in range(self.T - 1):
             for l in range(self.L):
@@ -72,7 +79,8 @@ class NCGM(nn.Module):
                 ztldl = 0.0
                 for ld in range(self.nei):
                     ztlld += Z[t, l, ld]
-        '''
+    '''
+    '''
         L = torch.sum(torch.mul(Z, (self.one - torch.log(Z) + torch.log(theta))))
 
         y_b = torch.narrow(y, 0, 0, self.T - 1)
@@ -80,5 +88,30 @@ class NCGM(nn.Module):
         e_b = torch.sum(Z, 2)
         e_a = torch.sum(torch.transpose(Z, 1, 2), 2)
         G = L - lam * (torch.sum((y_b - e_b) ** 2) + torch.sum((y_a - e_a) ** 2))
+
+        return torch.neg(G)
+    '''
+
+class NCGM_objective(nn.Module):
+    def __init__(self, time_size, location_size):
+        super().__init__()
+
+        self.T = time_size
+        self.L = location_size
+
+        self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double, requires_grad=True)
+    
+    def forward(self, Z, theta, y, lam):
+        L = torch.sum(torch.mul(Z, (self.one - torch.log(Z) + torch.log(theta))))
+
+        y_b = torch.narrow(y, 0, 0, self.T - 1)
+        y_a = torch.narrow(y, 0, 1, self.T - 1)
+        e_b = torch.sum(Z, 2)
+        e_a = torch.sum(torch.transpose(Z, 1, 2), 2)
+
+        d_b = torch.sum(torch.pow(torch.add(y_b, -1, e_b), 2))
+        d_a = torch.sum(torch.pow(torch.add(y_a, -1, e_a), 2))
+
+        G = torch.add(L, -1 * lam, torch.add(d_b, 1, d_a))
 
         return torch.neg(G)
