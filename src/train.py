@@ -89,18 +89,19 @@ if __name__ == "__main__":
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
     torch.set_default_dtype(torch.double)
-    #torch.set_grad_enabled(True)
+    torch.set_grad_enabled(True)
     torch.autograd.set_detect_anomaly(True)
 
 
-    mod = model.NCGM(5, 8, time_size, location_size, neighbor_size)
+    mod = model.NCGM(5, 8, location_size, neighbor_size)
     mod.to(device)
 
-    objective = model.NCGM_objective(time_size, location_size)
+    objective = model.NCGM_objective(location_size, neighbor_size)
 
     optimizer = optim.SGD(mod.parameters(), lr=0.01)
 
     input_list = []
+    population_list = []
     for t in tqdm.trange(time_size):
         input_list_tmp = []
         for l in range(location_size):
@@ -111,13 +112,8 @@ if __name__ == "__main__":
             while len(input_tmp) < neighbor_size:
                 input_tmp.append([t / float(time_size) - 0.5, location[l][0], location[l][1], 0.0, 0.0])
             input_list_tmp.append(input_tmp)
-        input_list.append(input_list_tmp)
-    
-    input_tensor = torch.Tensor(input_list)
-    input_tensor.to(device)
-
-    population_tensor = torch.tensor(population_data, dtype=torch.double)
-    population_tensor.to(device)
+        input_list.append(torch.tensor(input_list_tmp, device=device, dtype=torch.double))
+        population_list.append(torch.tensor(population_data[t], dtype=torch.double, device=device))
 
     adj_tensor = torch.Tensor(adj_table)
     adj_tensor.to(device)
@@ -127,14 +123,18 @@ if __name__ == "__main__":
     itr = tqdm.trange(100)
     losses = []
     for i in itr:
-        Z, theta = mod(input_tensor, population_tensor)
+        for t in tqdm.trange(time_size - 1):
+            Z, theta = mod(input_list[t], population_list[t])
 
-        loss = objective(Z, theta, population_tensor, 1.0)
-        losses.append(loss.item())
+            loss = objective(Z, theta, population_list[t], population_list[t+1], 1.0)
+            losses.append(loss.item())
         
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
-    print(losses)
+            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
+            itr.set_postfix(ordered_dict=OrderedDict(b_grad=mod.fc2.bias.grad))
+    print(mod.state_dict())
+    print(Z)
+    print(theta)
