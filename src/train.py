@@ -76,15 +76,18 @@ if __name__ == "__main__":
             csv_file.write(','.join(adj_list[i]))
             csv_file.write('\n')
     '''
-    #neighbor_size = 10
-    neighbor_size = 4
-    #time_size = 9480
-    time_size = 8
-    #location_size = 117
-    location_size = 4
-    #population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv")
-    population_data, adj_table, location, neighbor_table = read_samlpe()
-    #location = [[row[0] / 11 - 0.5, row[1] / 14 - 0.5] for row in location_table]
+    is_samlpe = False
+    if is_samlpe:
+        neighbor_size = 4
+        time_size = 8
+        location_size = 4
+        population_data, adj_table, location, neighbor_table = read_samlpe()
+    else:
+        neighbor_size = 10
+        time_size = 9480
+        location_size = 117
+        population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv")
+        location = [[row[0] / 11 - 0.5, row[1] / 14 - 0.5] for row in location_table]
     
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
