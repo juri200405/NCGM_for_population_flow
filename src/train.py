@@ -52,17 +52,7 @@ def read_samlpe():
 
     return population_data, location_table, adj_table, neighbor
 
-if __name__ == "__main__":
-    '''
-    p = torch.tensor([1.0, 1.0, 1.0, 1.0])
-    x = torch.tensor([[1.0, 5.0, 1.0, 1.0], [5.0, 1.0, 1.0, 1.0]])
-    m = torch.distributions.multinomial.Multinomial(total_count=10, probs=x)
-    y = m.log_prob(x)
-    print(y)
-    print(torch.exp(y))
-    print(m.sample())
-
-    
+def build_adj_list(adj_table):
     adj_list = []
     for row in range(117):
         tmp_list = []
@@ -75,8 +65,9 @@ if __name__ == "__main__":
         for i in range(117):
             csv_file.write(','.join(adj_list[i]))
             csv_file.write('\n')
-    '''
-    is_samlpe = False
+
+if __name__ == "__main__":
+    is_samlpe = True
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
@@ -137,7 +128,7 @@ if __name__ == "__main__":
             optimizer.step()
 
             #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
-            itr.set_postfix(ordered_dict=OrderedDict(b_grad=mod.fc2.bias.grad))
+            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
     print(mod.state_dict())
     print(Z)
     print(theta)
