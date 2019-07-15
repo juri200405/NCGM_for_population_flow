@@ -8,7 +8,7 @@ import torch.optim as optim
 
 import model
 
-def read_data(dpath, filename):
+def read_data(dpath, filename, make_adj_list):
     with open(str(dpath / filename), 'rt', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         population_data = []
@@ -31,6 +31,9 @@ def read_data(dpath, filename):
         reader = csv.reader(csvfile)
         xy = [[float(col) for col in row] for row in reader]
     
+    if make_adj_list:
+        build_adj_list(adj)
+
     with open(str(dpath / "chohu_adj_list.csv"), 'rt', newline='', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile)
         neighbor = [[int(col) for col in row] for row in reader]
@@ -77,11 +80,13 @@ if __name__ == "__main__":
         neighbor_size = 10
         time_size = 9480
         location_size = 117
-        population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv")
+        population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv", False)
         location = [[row[0] / 11 - 0.5, row[1] / 14 - 0.5] for row in location_table]
-    
-    use_cuda = torch.cuda.is_available()
-    device = torch.device('cuda' if use_cuda else 'cpu')
+
+    use_cuda = False
+    available_cuda = torch.cuda.is_available()
+    device = torch.device('cuda' if (use_cuda and available_cuda) else 'cpu')
+    print(device)
     torch.set_default_dtype(torch.double)
     torch.set_grad_enabled(True)
     torch.autograd.set_detect_anomaly(True)
