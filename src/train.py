@@ -75,7 +75,7 @@ if __name__ == "__main__":
         neighbor_size = 4
         time_size = 8
         location_size = 4
-        population_data, adj_table, location, neighbor_table = read_samlpe()
+        population_data, location, adj_table, neighbor_table = read_samlpe()
     else:
         neighbor_size = 10
         time_size = 9480
@@ -88,8 +88,8 @@ if __name__ == "__main__":
     device = torch.device('cuda' if (use_cuda and available_cuda) else 'cpu')
     print(device)
     torch.set_default_dtype(torch.double)
-    torch.set_grad_enabled(True)
-    torch.autograd.set_detect_anomaly(True)
+    #torch.set_grad_enabled(True)
+    #torch.autograd.set_detect_anomaly(True)
 
 
     mod = model.NCGM(5, 8, location_size, neighbor_size)
@@ -123,9 +123,9 @@ if __name__ == "__main__":
     losses = []
     for i in itr:
         for t in tqdm.trange(time_size - 1):
-            Z, theta = mod(input_list[t], population_list[t])
+            theta = mod(input_list[t])
 
-            loss = objective(Z, theta, population_list[t], population_list[t+1], 1.0)
+            loss = objective(theta, population_list[t], population_list[t+1], 1.0)
             losses.append(loss.item())
         
             optimizer.zero_grad()
@@ -135,5 +135,5 @@ if __name__ == "__main__":
             #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
             itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
     print(mod.state_dict())
-    print(Z)
     print(theta)
+    print(losses)

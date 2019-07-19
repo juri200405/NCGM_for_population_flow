@@ -14,15 +14,14 @@ class NCGM(nn.Module):
         self.fc2 = nn.Linear(self.hid_size, 1)
         self.softmax = nn.Softmax(1)
 
-    def forward(self, input, y):
+    def forward(self, input):
         out = self.fc1(input).tanh()
         out = self.fc2(out)
         out = self.softmax(out)
 
         theta = out.squeeze()
-        Z = theta.mul(y.unsqueeze(1)).log().clamp(min=-104.0)
 
-        return Z, theta
+        return theta
     
 class NCGM_objective(nn.Module):
     def __init__(self, location_size, neighbor_size):
@@ -31,7 +30,9 @@ class NCGM_objective(nn.Module):
         self.L = location_size
         self.nei = neighbor_size
     
-    def forward(self, Z, theta, yt, yt1, lam):
+    def forward(self, theta, yt, yt1, lam):
+        Z = theta.mul(yt.unsqueeze(1)).log().clamp(min=-104.0)
+        
         log_theta = theta.log().clamp(min=-104.0)
         log_theta_add_1 = log_theta.add(1)
         Ls_right = log_theta_add_1.add(-1, Z)
