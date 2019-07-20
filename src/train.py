@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     objective = model.NCGM_objective(location_size, neighbor_size)
 
-    optimizer = optim.SGD(mod.parameters(), lr=0.01)
+    optimizer = optim.SGD(mod.parameters(), lr=1.0)
 
     input_list = []
     population_list = []
@@ -126,14 +126,14 @@ if __name__ == "__main__":
             theta = mod(input_list[t])
 
             loss = objective(theta, population_list[t], population_list[t+1], 1.0)
+            #print(loss)
             losses.append(loss.item())
         
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
-            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
+            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
+            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
     print(mod.state_dict())
     print(theta)
-    print(losses)
