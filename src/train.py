@@ -70,7 +70,7 @@ def build_adj_list(adj_table):
             csv_file.write('\n')
 
 if __name__ == "__main__":
-    is_samlpe = True
+    is_samlpe = False
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         population_data, adj_table, location_table, neighbor_table = read_data(Path("datas/chohu"), "chohu_01.csv", False)
         location = [[row[0] / 11 - 0.5, row[1] / 14 - 0.5] for row in location_table]
 
-    use_cuda = False
+    use_cuda = True
     available_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if (use_cuda and available_cuda) else 'cpu')
     print(device)
@@ -119,13 +119,13 @@ if __name__ == "__main__":
 
     mod.train()
     print(mod.state_dict())
-    itr = tqdm.trange(100)
+    itr = tqdm.trange(1000)
     losses = []
     for i in itr:
         for t in tqdm.trange(time_size - 1):
             theta = mod(input_list[t])
 
-            loss = objective(theta, population_list[t], population_list[t+1], 1.0)
+            loss = objective(theta, population_list[t], population_list[t+1], 1.0, device)
             #print(loss)
             losses.append(loss.item())
         
