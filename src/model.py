@@ -31,15 +31,17 @@ class NCGM_objective(nn.Module):
         self.nei = neighbor_size
     
     def forward(self, theta, yt, yt1, lam):
+        for i in range(self.L):
+            m = torch.distributions.multinomial(prob=theta[i], )
         Z = theta.mul(yt.unsqueeze(1)).log().clamp(min=-104.0)
         Z_exp = Z.exp()
 
         log_theta = theta.log().clamp(min=-104.0)
         Ls_right = log_theta.add(1).add(-1, Z)
 
-        L = Z_exp.mul(Ls_right).sum()
+        obj_L = Z_exp.mul(Ls_right).sum()
 
-        return L
+        return obj_L
     
     def true_forward(self, theta, yt, yt1, lam):
         Z = theta.mul(yt.unsqueeze(1)).log().clamp(min=-104.0)
