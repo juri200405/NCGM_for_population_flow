@@ -2,70 +2,68 @@ import torch
 import torch.nn as nn
 
 class NCGM(nn.Module):
-    def __init__(self, input_size, hidden_size, time_size, location_size, neighbor_size):
+    def __init__(self, input_size, hidden_size, location_size, neighbor_size):
         super(NCGM, self).__init__()
 
         self.input_size = input_size
         self.hid_size = hidden_size
-        self.T = time_size
         self.L = location_size
         self.nei = neighbor_size
 
         self.fc1 = nn.Linear(self.input_size, self.hid_size)
         self.fc2 = nn.Linear(self.hid_size, 1)
-        self.softmax = nn.Softmax(2)
+        self.softmax = nn.Softmax(1)
 
-        #self.Z = nn.Parameter(torch.randint(1, 14, (self.T - 1, self.L, self.L), requires_grad=True, dtype=torch.double))
-        #self.Z_dash = nn.Parameter(torch.log(torch.randint(1, 14, (self.T - 1, self.L, self.L), dtype=torch.double)))
-        #self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double, requires_grad=True)
-    
-    def forward(self, input, y):
-        theta = self.f(torch.narrow(input, 0, 0, self.T - 1)).squeeze()
-        #Z = torch.zeros(self.T - 1, self.L, self.nei, dtype=torch.double)
-        #Z = torch.zeros(self.T - 1, self.L, self.L, dtype=torch.double)
-        
-        '''
-        for i in range(self.T - 1):
-            for j in range(self.L):
-                #x = torch.distributions.multinomial.Multinomial(y[i, j].item(), probs=theta[i, j]).sample()
-                x = torch.mul(theta[i, j], y[i, j])
-                #for k in range(self.nei):
-                for k in range(self.L):
-                    Z[i, j, k] = x[k]
-        '''
-
-        yt = torch.unsqueeze(torch.narrow(y, 0, 0, self.T - 1), 2)
-        Z = torch.mul(theta, yt)
-
-        return Z, theta
-    
-    def f(self, inputs):
-        out = torch.tanh(self.fc1(inputs))
+    def forward(self, input):
+        out = self.fc1(input).tanh()
         out = self.fc2(out)
         out = self.softmax(out)
-        return out
 
+        theta = out.squeeze()
+
+        return theta
+    
 class NCGM_objective(nn.Module):
-    def __init__(self, time_size, location_size):
+    def __init__(self, location_size, neighbor_size):
         super(NCGM_objective, self).__init__()
 
-        self.T = time_size
         self.L = location_size
-
-        self.one = torch.ones(self.T - 1, self.L, self.L, dtype=torch.double, requires_grad=True)
+        self.nei = neighbor_size
     
-    def forward(self, Z, theta, y, lam):
-        #L = torch.sum(torch.mul(Z, (self.one - torch.log(Z) + torch.log(theta))))
-        L = torch.sum(torch.mul(Z, torch.add(torch.add(torch.log(theta), 1), -1, torch.log(Z))))
+    def forward(self, theta, yt, yt1, lam, dev):
+        theta_list = list(theta.unbind(0))
+        theta_log_list = list(theta.log().clamp(min=-104.0).unbind())
+        Z_list = []
+        Z_log_list = []
+        obj_L = torch.tensor(0.0, device=dev)
+        for i in range(self.L):
+            m = torch.distributions.multinomial.Multinomial(total_count=int(yt[i]), probs=theta_list[i])
+            Z = m.sample()
+            Z_list.append(Z.unsqueeze(dim=0))
+            Z_log_list.append(Z.clamp(min=1).log())
+            Ls_right = theta_log_list[i].add(1).add(-1, Z_log_list[i])
+            obj_L = obj_L.add(Z.dot(Ls_right))
         
-        y_b = torch.narrow(y, 0, 0, self.T - 1)
-        y_a = torch.narrow(y, 0, 1, self.T - 1)
-        e_b = torch.sum(Z, 2)
-        e_a = torch.sum(torch.transpose(Z, 1, 2), 2)
+        Z_tensor = torch.cat(Z_list, 0)
+        et = yt.add(-1, Z_tensor.sum(0)).pow(2)
+        et1 = yt1.add(-1, Z_tensor.sum(1)).pow(2)
 
-        d_b = torch.sum(torch.pow(torch.add(y_b, -1, e_b), 2))
-        d_a = torch.sum(torch.pow(torch.add(y_a, -1, e_a), 2))
+        G = obj_L.add(-1 * lam, et.add(1, et1).sum())
 
-        G = torch.add(L, -1 * lam, torch.add(d_b, 1, d_a))
+        return G.neg()
+    
+    def true_forward(self, theta, yt, yt1, lam):
+        Z = theta.mul(yt.unsqueeze(1)).log().clamp(min=-104.0)
 
-        return torch.neg(G)
+        log_theta = theta.log().clamp(min=-104.0)
+        log_theta_add_1 = log_theta.add(1)
+        Ls_right = log_theta_add_1.add(-1, Z)
+
+        L = Z.exp().mul(Ls_right).sum(1)
+
+        et = yt.add(-1, Z.exp().sum(1)).pow(2)
+        et1 = yt1.add(-1, Z.exp().sum(1)).pow(2)
+
+        G = L.add(-1 * lam, et.add(1, et1))
+
+        return G.sum().neg()
