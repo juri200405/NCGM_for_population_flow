@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     writer = tensorboardX.SummaryWriter("log")
 
-    mod = model.NCGM(5, 8, location_size, neighbor_size)
+    mod = model.NCGM(5, 40, location_size, neighbor_size)
     mod.to(device)
 
     objective = model.NCGM_objective(location_size, neighbor_size, device)
