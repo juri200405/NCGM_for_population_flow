@@ -39,12 +39,12 @@ if __name__ == "__main__":
     mod.to(device)
 
     objective = model.NCGM_objective(location_size, neighbor_size, device)
-    optimizer = optim.SGD(mod.parameters(), lr=0.1)
+    #optimizer = optim.SGD(mod.parameters(), lr=0.5)
+    optimizer = optim.Adam(mod.parameters())
 
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
     mod.train()
-    print(mod.state_dict())
     itr = tqdm.trange(10000)
     losses = []
     for i in itr:
@@ -66,6 +66,5 @@ if __name__ == "__main__":
 
             writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
             writer.add_text("Z", str(Z), i * 10000 + t)
-    print(mod.state_dict())
     print(theta)
     writer.close()
