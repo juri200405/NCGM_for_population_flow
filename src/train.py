@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     mod.train()
     print(mod.state_dict())
-    itr = tqdm.trange(1000)
+    itr = tqdm.trange(10000)
     losses = []
     for i in itr:
         for t in tqdm.trange(time_size - 1):

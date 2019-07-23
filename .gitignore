@@ -1,5 +1,6 @@
 .vscode
 __pycache__
 /datas/chohu/*.csv
+/log/events*
 
 !.gitkeep
