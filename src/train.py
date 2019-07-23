@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     objective = model.NCGM_objective(location_size, neighbor_size, device)
     #optimizer = optim.SGD(mod.parameters(), lr=0.5)
-    optimizer = optim.Adam(mod.parameters())
+    optimizer = optim.Adam(mod.parameters(), lr=0.1)
 
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
