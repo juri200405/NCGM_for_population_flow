@@ -5,12 +5,14 @@ from collections import OrderedDict
 import torch
 import torch.optim as optim
 
+import tensorboardX
+
 import model
 import datas
 import dataloader
 
 if __name__ == "__main__":
-    is_samlpe = False
+    is_samlpe = True
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
@@ -31,12 +33,13 @@ if __name__ == "__main__":
     #torch.set_grad_enabled(True)
     #torch.autograd.set_detect_anomaly(True)
 
+    writer = tensorboardX.SummaryWriter("log")
 
     mod = model.NCGM(5, 8, location_size, neighbor_size)
     mod.to(device)
 
     objective = model.NCGM_objective(location_size, neighbor_size, device)
-    optimizer = optim.SGD(mod.parameters(), lr=1.0)
+    optimizer = optim.SGD(mod.parameters(), lr=0.1)
 
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
@@ -50,7 +53,7 @@ if __name__ == "__main__":
 
             theta = mod(input_data)
 
-            loss = objective(theta, yt, yt1, 1.0)
+            loss, Z = objective(theta, yt, yt1, 1.0)
             #print(loss)
             losses.append(loss.item())
         
@@ -60,5 +63,9 @@ if __name__ == "__main__":
 
             itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
             #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
+
+            writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
+            writer.add_text("Z", str(Z), i * 10000 + t)
     print(mod.state_dict())
     print(theta)
+    writer.close()

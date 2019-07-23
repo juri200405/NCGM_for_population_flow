@@ -41,7 +41,7 @@ class NCGM_objective(nn.Module):
             m = torch.distributions.multinomial.Multinomial(total_count=int(yt[i]), probs=theta_list[i])
             Z = m.sample()
             Z_list.append(Z.unsqueeze(dim=0))
-            Z_log_list.append(Z.clamp(min=1).log())
+            Z_log_list.append(Z.log().clamp(min=-104.0))
             Ls_right = theta_log_list[i].add(1).add(-1, Z_log_list[i])
             obj_L = obj_L.add(Z.dot(Ls_right))
         
@@ -51,4 +51,4 @@ class NCGM_objective(nn.Module):
 
         G = obj_L.add(-1 * lam, et.add(1, et1).sum())
 
-        return G.neg()
+        return G.neg(), Z_tensor
