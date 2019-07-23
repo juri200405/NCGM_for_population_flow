@@ -24,18 +24,19 @@ class NCGM(nn.Module):
         return theta
     
 class NCGM_objective(nn.Module):
-    def __init__(self, location_size, neighbor_size):
+    def __init__(self, location_size, neighbor_size, device):
         super(NCGM_objective, self).__init__()
 
         self.L = location_size
         self.nei = neighbor_size
+        self.device = device
     
-    def forward(self, theta, yt, yt1, lam, dev):
+    def forward(self, theta, yt, yt1, lam):
         theta_list = list(theta.unbind(0))
         theta_log_list = list(theta.log().clamp(min=-104.0).unbind())
         Z_list = []
         Z_log_list = []
-        obj_L = torch.tensor(0.0, device=dev)
+        obj_L = torch.tensor(0.0, device=self.device)
         for i in range(self.L):
             m = torch.distributions.multinomial.Multinomial(total_count=int(yt[i]), probs=theta_list[i])
             Z = m.sample()
@@ -51,19 +52,3 @@ class NCGM_objective(nn.Module):
         G = obj_L.add(-1 * lam, et.add(1, et1).sum())
 
         return G.neg()
-    
-    def true_forward(self, theta, yt, yt1, lam):
-        Z = theta.mul(yt.unsqueeze(1)).log().clamp(min=-104.0)
-
-        log_theta = theta.log().clamp(min=-104.0)
-        log_theta_add_1 = log_theta.add(1)
-        Ls_right = log_theta_add_1.add(-1, Z)
-
-        L = Z.exp().mul(Ls_right).sum(1)
-
-        et = yt.add(-1, Z.exp().sum(1)).pow(2)
-        et1 = yt1.add(-1, Z.exp().sum(1)).pow(2)
-
-        G = L.add(-1 * lam, et.add(1, et1))
-
-        return G.sum().neg()
