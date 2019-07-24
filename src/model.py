@@ -30,6 +30,8 @@ class NCGM_objective(nn.Module):
         self.L = location_size
         self.nei = neighbor_size
         self.device = device
+
+        self.mse_loss = nn.MSELoss(reduction='sum')
     
     def forward(self, theta, yt, yt1, lam):
         theta_list = list(theta.unbind(0))
@@ -46,8 +48,8 @@ class NCGM_objective(nn.Module):
             obj_L = obj_L.add(Z.dot(Ls_right))
         
         Z_tensor = torch.cat(Z_list, 0)
-        et = yt.add(-1, Z_tensor.sum(0)).pow(2)
-        et1 = yt1.add(-1, Z_tensor.t().sum(0)).pow(2)
+        et = self.mse_loss(yt, Z_tensor.sum(0))
+        et1 = self.mse_loss(yt1, Z_tensor.t().sum(0))
 
         G = obj_L.add(-1 * lam, et.add(1, et1).sum())
 

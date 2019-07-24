@@ -45,7 +45,7 @@ if __name__ == "__main__":
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
     mod.train()
-    itr = tqdm.trange(10000)
+    itr = tqdm.trange(100)
     losses = []
     Z_list = []
     ave_loss = 0.0
