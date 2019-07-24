@@ -64,8 +64,8 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
-            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
+            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
+            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
 
             writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
             ave_loss = ave_loss + loss.item()
