@@ -33,7 +33,7 @@ class NCGM_objective(nn.Module):
     
     def forward(self, theta, yt, yt1, lam):
         theta_list = list(theta.unbind(0))
-        theta_log_list = list(theta.log().clamp(min=-104.0).unbind())
+        theta_log_list = list(theta.log().clamp(min=-104.0).unbind(0))
         Z_list = []
         Z_log_list = []
         obj_L = torch.tensor(0.0, device=self.device)
@@ -41,14 +41,14 @@ class NCGM_objective(nn.Module):
             m = torch.distributions.multinomial.Multinomial(total_count=int(yt[i]), probs=theta_list[i])
             Z = m.sample()
             Z_list.append(Z.unsqueeze(dim=0))
-            Z_log_list.append(Z.clamp(min=1).log())
+            Z_log_list.append(Z.log().clamp(min=-104.0))
             Ls_right = theta_log_list[i].add(1).add(-1, Z_log_list[i])
             obj_L = obj_L.add(Z.dot(Ls_right))
         
         Z_tensor = torch.cat(Z_list, 0)
         et = yt.add(-1, Z_tensor.sum(0)).pow(2)
-        et1 = yt1.add(-1, Z_tensor.sum(1)).pow(2)
+        et1 = yt1.add(-1, Z_tensor.t().sum(0)).pow(2)
 
         G = obj_L.add(-1 * lam, et.add(1, et1).sum())
 
-        return G.neg()
+        return G.neg(), Z_tensor

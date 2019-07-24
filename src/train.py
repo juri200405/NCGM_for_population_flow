@@ -5,12 +5,14 @@ from collections import OrderedDict
 import torch
 import torch.optim as optim
 
+import tensorboardX
+
 import model
 import datas
 import dataloader
 
 if __name__ == "__main__":
-    is_samlpe = False
+    is_samlpe = True
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
@@ -31,34 +33,46 @@ if __name__ == "__main__":
     #torch.set_grad_enabled(True)
     #torch.autograd.set_detect_anomaly(True)
 
+    writer = tensorboardX.SummaryWriter("log")
 
-    mod = model.NCGM(5, 8, location_size, neighbor_size)
+    mod = model.NCGM(5, 40, location_size, neighbor_size)
     mod.to(device)
 
     objective = model.NCGM_objective(location_size, neighbor_size, device)
-    optimizer = optim.SGD(mod.parameters(), lr=1.0)
+    #optimizer = optim.SGD(mod.parameters(), lr=0.5)
+    optimizer = optim.Adam(mod.parameters())
 
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
     mod.train()
-    print(mod.state_dict())
-    itr = tqdm.trange(1000)
+    itr = tqdm.trange(10000)
     losses = []
+    Z_list = []
+    ave_loss = 0.0
     for i in itr:
         for t in tqdm.trange(time_size - 1):
             input_data, yt, yt1 = data_loader.get_t_input(t)
 
             theta = mod(input_data)
 
-            loss = objective(theta, yt, yt1, 1.0)
+            loss, Z = objective(theta, yt, yt1, 1.0)
             #print(loss)
             losses.append(loss.item())
+            Z_list.append(Z)
         
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
-            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
-    print(mod.state_dict())
+            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
+            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
+
+            writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
+            ave_loss = ave_loss + loss.item()
+            
+        writer.add_text("Z", str(torch.cat(Z_list, 0)), i)
+        writer.add_scalar("ave_loss", ave_loss / (time_size - 1), i)
+        ave_loss = 0.0
     print(theta)
+    writer.add_text("progress", "finish", 0)
+    writer.close()
