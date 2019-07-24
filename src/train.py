@@ -47,6 +47,8 @@ if __name__ == "__main__":
     mod.train()
     itr = tqdm.trange(10000)
     losses = []
+    Z_list = []
+    ave_loss = 0.0
     for i in itr:
         for t in tqdm.trange(time_size - 1):
             input_data, yt, yt1 = data_loader.get_t_input(t)
@@ -56,6 +58,7 @@ if __name__ == "__main__":
             loss, Z = objective(theta, yt, yt1, 1.0)
             #print(loss)
             losses.append(loss.item())
+            Z_list.append(Z)
         
             optimizer.zero_grad()
             loss.backward()
@@ -65,6 +68,11 @@ if __name__ == "__main__":
             #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
 
             writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
-            writer.add_text("Z", str(Z), i * 10000 + t)
+            ave_loss = ave_loss + loss.item()
+            
+        writer.add_text("Z", str(torch.cat(Z_list, 0)), i)
+        writer.add_scalar("ave_loss", ave_loss / (time_size - 1), i)
+        ave_loss = 0.0
     print(theta)
+    writer.add_text("progress", "finish", 0)
     writer.close()
