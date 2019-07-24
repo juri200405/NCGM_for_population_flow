@@ -12,7 +12,7 @@ import datas
 import dataloader
 
 if __name__ == "__main__":
-    is_samlpe = True
+    is_samlpe = False
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
