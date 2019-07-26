@@ -45,7 +45,7 @@ if __name__ == "__main__":
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
     mod.train()
-    itr = tqdm.trange(100)
+    itr = tqdm.trange(10000)
     losses = []
     for i in itr:
         input_data, y = data_loader.get_t_input(0)
@@ -66,6 +66,6 @@ if __name__ == "__main__":
         writer.add_scalar("loss", loss.item(), i)
         writer.add_scalar("fc2_bias", mod.fc2.bias.item(), i)
         writer.add_text("Z", str(mod.Z), i)
-    print(theta)
+    print(mod.Z)
     writer.add_text("progress", "finish", 0)
     writer.close()
