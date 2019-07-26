@@ -48,9 +48,9 @@ class NCGM_objective(nn.Module):
             obj_L = obj_L.add(Z.dot(Ls_right))
         
         Z_tensor = torch.cat(Z_list, 0)
-        et = self.mse_loss(yt, Z_tensor.sum(0))
-        et1 = self.mse_loss(yt1, Z_tensor.t().sum(0))
+        et = self.mse_loss(yt, Z_tensor.t().sum(0))
+        et1 = self.mse_loss(yt1, Z_tensor.sum(0))
 
-        G = obj_L.add(-1 * lam, et.add(1, et1).sum())
+        G = obj_L.add(-1 * lam, et.add(1, et1))
 
         return G.neg(), Z_tensor

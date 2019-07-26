@@ -12,7 +12,7 @@ import datas
 import dataloader
 
 if __name__ == "__main__":
-    is_samlpe = False
+    is_samlpe = True
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
     mod.train()
-    itr = tqdm.trange(100)
+    itr = tqdm.trange(10000)
     losses = []
     Z_list = []
     ave_loss = 0.0
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             loss, Z = objective(theta, yt, yt1, 1.0)
             #print(loss)
             losses.append(loss.item())
-            Z_list.append(Z)
+            Z_list.append(Z.unsqueeze(0).to("cpu"))
         
             optimizer.zero_grad()
             loss.backward()
