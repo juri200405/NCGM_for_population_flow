@@ -31,49 +31,41 @@ if __name__ == "__main__":
     print(device)
     torch.set_default_dtype(torch.double)
     #torch.set_grad_enabled(True)
-    #torch.autograd.set_detect_anomaly(True)
+    torch.autograd.set_detect_anomaly(True)
 
     writer = tensorboardX.SummaryWriter("log")
 
-    mod = model.NCGM(5, 40, location_size, neighbor_size)
+    mod = model.NCGM(5, 40, time_size, location_size, neighbor_size)
     mod.to(device)
 
-    objective = model.NCGM_objective(location_size, neighbor_size, device)
+    objective = model.NCGM_objective(time_size, location_size, neighbor_size, device)
     #optimizer = optim.SGD(mod.parameters(), lr=0.5)
     optimizer = optim.Adam(mod.parameters())
 
     data_loader = dataloader.Data_loader(population_data, location, adj_table, neighbor_table, time_size, location_size, neighbor_size, device)
 
     mod.train()
-    itr = tqdm.trange(10000)
+    itr = tqdm.trange(100)
     losses = []
-    Z_list = []
-    ave_loss = 0.0
-    time_size = 2
     for i in itr:
-        for t in tqdm.trange(time_size - 1):
-            input_data, yt, yt1 = data_loader.get_t_input(t)
+        input_data, y = data_loader.get_t_input(0)
 
-            theta = mod(input_data)
+        theta = mod(input_data, y)
 
-            loss, Z = objective(theta, yt, yt1, 1.0)
-            #print(loss)
-            losses.append(loss.item())
-            Z_list.append(Z.unsqueeze(0).to("cpu"))
-        
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        loss = objective(theta, mod.Z, y, 1.0)
+        #print(loss)
+        losses.append(loss.item())
+    
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-            #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
-            itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
+        #itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item(), b_grad=mod.fc2.bias.grad))
+        itr.set_postfix(ordered_dict=OrderedDict(loss=loss.item()))
 
-            writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
-            ave_loss = ave_loss + loss.item()
-            
-        writer.add_text("Z", str(torch.cat(Z_list, 0)), i)
-        writer.add_scalar("ave_loss", ave_loss / (time_size - 1), i)
-        ave_loss = 0.0
+        writer.add_scalar("loss", loss.item(), i)
+        writer.add_scalar("fc2_bias", mod.fc2.bias.item(), i)
+        writer.add_text("Z", str(mod.Z), i)
     print(theta)
     writer.add_text("progress", "finish", 0)
     writer.close()
