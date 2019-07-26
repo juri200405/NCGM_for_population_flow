@@ -49,6 +49,7 @@ if __name__ == "__main__":
     losses = []
     Z_list = []
     ave_loss = 0.0
+    time_size = 2
     for i in itr:
         for t in tqdm.trange(time_size - 1):
             input_data, yt, yt1 = data_loader.get_t_input(t)
