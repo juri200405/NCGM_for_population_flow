@@ -12,14 +12,15 @@ import datas
 import dataloader
 
 if __name__ == "__main__":
-    is_samlpe = True
+    is_samlpe = False
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
         location_size = 4
         population_data, location, adj_table, neighbor_table = datas.read_samlpe()
     else:
-        neighbor_size = 10
+        #neighbor_size = 10
+        neighbor_size = 117
         time_size = 9480
         location_size = 117
         population_data, adj_table, location_table, neighbor_table = datas.read_data(Path("datas/chohu"), "chohu_01.csv", False)
