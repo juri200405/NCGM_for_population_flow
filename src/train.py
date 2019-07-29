@@ -35,10 +35,10 @@ if __name__ == "__main__":
 
     writer = tensorboardX.SummaryWriter("log")
 
-    mod = model.NCGM(5, 40, location_size, neighbor_size)
+    mod = model.NCGM(5, 40, time_size, location_size, neighbor_size)
     mod.to(device)
 
-    objective = model.NCGM_objective(location_size, neighbor_size, device)
+    objective = model.NCGM_objective(location_size, neighbor_size)
     #optimizer = optim.SGD(mod.parameters(), lr=0.5)
     optimizer = optim.Adam(mod.parameters())
 
@@ -47,19 +47,16 @@ if __name__ == "__main__":
     mod.train()
     itr = tqdm.trange(10000)
     losses = []
-    Z_list = []
     ave_loss = 0.0
-    time_size = 2
     for i in itr:
         for t in tqdm.trange(time_size - 1):
             input_data, yt, yt1 = data_loader.get_t_input(t)
 
             theta = mod(input_data)
 
-            loss, Z = objective(theta, yt, yt1, 1.0)
+            loss = objective(theta, mod.Z[t], yt, yt1, 1.0)
             #print(loss)
             losses.append(loss.item())
-            Z_list.append(Z.unsqueeze(0).to("cpu"))
         
             optimizer.zero_grad()
             loss.backward()
@@ -71,7 +68,7 @@ if __name__ == "__main__":
             writer.add_scalar("loss", loss.item(), i * (time_size - 1) + t)
             ave_loss = ave_loss + loss.item()
             
-        writer.add_text("Z", str(torch.cat(Z_list, 0)), i)
+        writer.add_text("Z", str(mod.Z), i)
         writer.add_scalar("ave_loss", ave_loss / (time_size - 1), i)
         ave_loss = 0.0
     print(theta)
