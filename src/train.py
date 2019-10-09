@@ -1,6 +1,7 @@
 from pathlib import Path
 import tqdm
 from collections import OrderedDict
+import numpy as np
 
 import torch
 import torch.optim as optim
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     #学習
     mod.train()
-    itr = tqdm.trange(10000)
+    itr = tqdm.trange(2000)
     losses = []
     ave_loss = 0.0
     for i in itr:
@@ -88,8 +89,9 @@ if __name__ == "__main__":
         writer.add_text("Z", str(mod.Z), i)
         writer.add_scalar("ave_loss", ave_loss / (time_size - 1), i)
         ave_loss = 0.0
+        
         with open("output/{0:05}.txt".format(i), 'wt') as f:
-            f.write(str(mod.Z.data.tolist()))
+            f.write(str(mod.Z.data.numpy()))
     print(theta)
     writer.add_text("progress", "finish", 0)
     writer.close()
