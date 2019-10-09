@@ -12,7 +12,7 @@ import datas
 import dataloader
 
 if __name__ == "__main__":
-    is_samlpe = False
+    is_samlpe = True
     if is_samlpe:
         neighbor_size = 4
         time_size = 8
@@ -72,6 +72,8 @@ if __name__ == "__main__":
         writer.add_text("Z", str(mod.Z), i)
         writer.add_scalar("ave_loss", ave_loss / (time_size - 1), i)
         ave_loss = 0.0
+        with open("output/{0:05}.txt".format(i), 'wt') as f:
+            f.write(str(mod.Z.data.tolist()))
     print(theta)
     writer.add_text("progress", "finish", 0)
     writer.close()

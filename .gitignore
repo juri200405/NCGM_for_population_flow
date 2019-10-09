@@ -2,5 +2,6 @@
 __pycache__
 /datas/chohu/*.csv
 /log/events*
+/output/*.txt
 
 !.gitkeep
